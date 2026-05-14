@@ -1,0 +1,22 @@
+# Python Virtual Environments
+# Ignore common virtual environment folder names
+/venv/
+/.venv/
+/env/
+/.env/
+/myenv/
+
+# Python cache and compiled files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# CSV files
+# Ignore all files with the .csv extension
+*.csv
+
+# IDE / Editor specific files
+.vscode/
+.idea/
+*.swp

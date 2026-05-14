@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prediction Results - LoL Match Predictor</title>
+    <meta name="description" content="Match prediction results with win probability, game length, kills, and tower predictions">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <div class="logo-icon">⚔️</div>
+                <h1>Match Predictor</h1>
+            </div>
+            <a href="/performance" class="performance-link">
+                <span>📈</span>
+                <span>Performance</span>
+            </a>
+            <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+                <span class="icon" id="theme-icon">🌙</span>
+                <span id="theme-label">Dark</span>
+            </button>
+        </header>
+
+        {% if result %}
+        <!-- Hero Section - Winner Display -->
+        <section class="results-hero">
+            <!-- Ultimate Model Display -->
+            {% if result.ultimate_winner and not result.ultimate_winner.error %}
+            <div class="ultimate-prediction-container" style="margin-bottom: 2.5rem; border: 1px solid var(--gold); padding: 2rem; border-radius: var(--radius-lg); background: linear-gradient(to bottom, rgba(200, 170, 110, 0.15), rgba(0,0,0,0.2)); box-shadow: 0 0 20px rgba(200, 170, 110, 0.1);">
+                <div class="winner-label" style="color: var(--gold); text-shadow: 0 0 10px rgba(200, 170, 110, 0.5); font-size: 1.2rem; letter-spacing: 0.2em; margin-bottom: 0.5rem;">✨ ULTIMATE PREDICTION ✨</div>
+                <div class="winner-name {{ 'blue' if result.ultimate_winner.winner == 'Blue' else 'red' }}" style="font-size: 4rem; margin-bottom: 0.5rem;">
+                    {{ result.ultimate_winner.winner }} VICTORY
+                </div>
+                <div class="confidence-badge" style="margin-bottom: 1.5rem;">
+                    <span class="confidence-value">{{ (result.ultimate_winner.confidence * 100) | round(1) }}%</span> confidence
+                </div>
+                
+                <!-- Win Probability Bar -->
+                <div class="win-probability">
+                    <div class="win-bar-container" style="height: 12px;">
+                        <div class="win-bar blue" data-width="{{ result.ultimate_winner.probabilities.Blue * 100 }}">
+                            {{ (result.ultimate_winner.probabilities.Blue * 100) | round(0) | int }}%
+                        </div>
+                        <div class="win-bar red" data-width="{{ result.ultimate_winner.probabilities.Red * 100 }}">
+                            {{ (result.ultimate_winner.probabilities.Red * 100) | round(0) | int }}%
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="winner-label" style="font-size: 0.9rem; opacity: 0.8;">Standard Prediction</div>
+            {% if result.match_winner %}
+            <div class="winner-name {{ 'blue' if result.match_winner.winner == 'Blue' else 'red' }}">
+                {{ result.match_winner.winner }} Team Wins
+            </div>
+            <div class="confidence-badge">
+                <span class="confidence-value">{{ (result.match_winner.confidence * 100) | round(1) }}%</span> confidence
+            </div>
+            
+            <!-- Win Probability Bar -->
+            <div class="win-probability">
+                <div class="win-bar-container">
+                    <div class="win-bar blue" data-width="{{ result.match_winner.probabilities.Blue * 100 }}">
+                        {{ (result.match_winner.probabilities.Blue * 100) | round(0) | int }}%
+                    </div>
+                    <div class="win-bar red" data-width="{{ result.match_winner.probabilities.Red * 100 }}">
+                        {{ (result.match_winner.probabilities.Red * 100) | round(0) | int }}%
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="winner-name">Analysis Complete</div>
+            {% endif %}
+            
+            <!-- Champion-Only Prediction (without team names) -->
+            {% if result.match_winner_no_team %}
+            <div class="champion-only-prediction">
+                <div class="champion-only-label">Champion-Only Prediction (without team strength)</div>
+                <div class="champion-only-result {{ 'blue' if result.match_winner_no_team.winner == 'Blue' else 'red' }}">
+                    {{ result.match_winner_no_team.winner }} Team
+                    <span class="champion-only-confidence">{{ (result.match_winner_no_team.confidence * 100) | round(1) }}%</span>
+                </div>
+                <div class="champion-only-bar-container">
+                    <div class="champion-only-bar blue" data-width="{{ result.match_winner_no_team.probabilities.Blue * 100 }}">
+                        {{ (result.match_winner_no_team.probabilities.Blue * 100) | round(0) | int }}%
+                    </div>
+                    <div class="champion-only-bar red" data-width="{{ result.match_winner_no_team.probabilities.Red * 100 }}">
+                        {{ (result.match_winner_no_team.probabilities.Red * 100) | round(0) | int }}%
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </section>
+
+        <!-- Teams Display -->
+        <section class="teams-display">
+            <div class="team-display blue">
+                <div class="team-name">{{ result.teams.blue.name }}</div>
+                <div class="champions-list">
+                    {% for champ in result.teams.blue.picks %}
+                    <span class="champion-badge">{{ champ }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div class="vs-divider">VS</div>
+            
+            <div class="team-display red">
+                <div class="team-name">{{ result.teams.red.name }}</div>
+                <div class="champions-list">
+                    {% for champ in result.teams.red.picks %}
+                    <span class="champion-badge">{{ champ }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
+
+        <!-- Predictions Grid -->
+        <section class="predictions-grid">
+            <!-- Game Duration -->
+            {% if result.game_length and not result.game_length.error %}
+            <div class="prediction-card">
+                <div class="prediction-header">
+                    <div class="prediction-icon">⏱️</div>
+                    <div class="prediction-title">Game Duration</div>
+                </div>
+                <div class="prediction-value">{{ result.game_length['predicted_minutes'] }} min</div>
+                <div class="prediction-subtitle">
+                    Expected range: {{ result.game_length['confidence_interval'][0] }} - {{ result.game_length['confidence_interval'][1] }} minutes
+                </div>
+                
+                {% if result.time_probabilities %}
+                <div class="probability-section">
+                    {% for threshold, prob in result.time_probabilities.items() %}
+                    <div class="probability-item">
+                        <div class="probability-label">
+                            <span>Over {{ threshold.split('_')[1]|float }} min</span>
+                            <span>{{ (prob * 100)|round(0)|int }}%</span>
+                        </div>
+                        <div class="probability-bar-container">
+                            <div class="probability-bar" data-width="{{ prob * 100 }}"></div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Total Kills -->
+            {% if result.total_kills and not result.total_kills.error %}
+            <div class="prediction-card">
+                <div class="prediction-header">
+                    <div class="prediction-icon">💀</div>
+                    <div class="prediction-title">Total Kills</div>
+                </div>
+                <div class="prediction-value">{{ result.total_kills['predicted_kills'] }}</div>
+                <div class="prediction-subtitle">
+                    Expected range: {{ result.total_kills['confidence_interval'][0] }} - {{ result.total_kills['confidence_interval'][1] }} kills
+                </div>
+                
+                {% if result.kill_probabilities %}
+                <div class="probability-section">
+                    {% for threshold, prob in result.kill_probabilities.items() %}
+                    <div class="probability-item">
+                        <div class="probability-label">
+                            <span>Over {{ threshold.split('_')[1]|float }} kills</span>
+                            <span>{{ (prob * 100)|round(0)|int }}%</span>
+                        </div>
+                        <div class="probability-bar-container">
+                            <div class="probability-bar" data-width="{{ prob * 100 }}"></div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Tower Predictions -->
+            {% if result.total_towers and not result.total_towers.error %}
+            <div class="prediction-card">
+                <div class="prediction-header">
+                    <div class="prediction-icon">🏰</div>
+                    <div class="prediction-title">Tower Predictions</div>
+                </div>
+                <div class="prediction-value">{{ result.total_towers['predicted_towers'] }}</div>
+                <div class="prediction-subtitle">
+                    Expected range: {{ result.total_towers['ranges']['low'] }} - {{ result.total_towers['ranges']['high'] }} towers
+                </div>
+                
+                {% if result.tower_probabilities %}
+                <div class="probability-section">
+                    {% for threshold, prob in result.tower_probabilities.items() %}
+                    <div class="probability-item">
+                        <div class="probability-label">
+                            <span>Over {{ threshold.split('_')[1]|float }} towers</span>
+                            <span>{{ (prob * 100)|round(0)|int }}%</span>
+                        </div>
+                        <div class="probability-bar-container">
+                            <div class="probability-bar" data-width="{{ prob * 100 }}"></div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+        </section>
+
+        {% else %}
+        <!-- No Results -->
+        <div class="card text-center" style="padding: 3rem;">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">🔮</div>
+            <h2>No Prediction Results</h2>
+            <p style="color: var(--text-muted); margin-top: 0.5rem;">
+                Select your teams and champions to get match predictions.
+            </p>
+        </div>
+        {% endif %}
+
+        <!-- Back Link -->
+        <div class="text-center">
+            <a href="/" class="back-link">
+                <span>←</span>
+                <span>New Prediction</span>
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // ========================================
+        // Theme Management
+        // ========================================
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeUI(newTheme);
+        }
+
+        function updateThemeUI(theme) {
+            const icon = document.getElementById('theme-icon');
+            const label = document.getElementById('theme-label');
+            
+            if (theme === 'dark') {
+                icon.textContent = '🌙';
+                label.textContent = 'Dark';
+            } else {
+                icon.textContent = '☀️';
+                label.textContent = 'Light';
+            }
+        }
+
+        function loadTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            updateThemeUI(savedTheme);
+        }
+
+        // ========================================
+        // Animate Probability Bars
+        // ========================================
+        function animateBars() {
+            // Animate probability bars
+            document.querySelectorAll('.probability-bar').forEach((bar, index) => {
+                const width = bar.getAttribute('data-width');
+                setTimeout(() => {
+                    bar.style.width = width + '%';
+                }, 100 + (index * 50));
+            });
+            
+            // Animate win probability bars
+            document.querySelectorAll('.win-bar').forEach(bar => {
+                const width = bar.getAttribute('data-width');
+                setTimeout(() => {
+                    bar.style.width = width + '%';
+                }, 300);
+            });
+            
+            // Animate champion-only prediction bars
+            document.querySelectorAll('.champion-only-bar').forEach(bar => {
+                const width = bar.getAttribute('data-width');
+                setTimeout(() => {
+                    bar.style.width = width + '%';
+                }, 500);
+            });
+        }
+
+        // ========================================
+        // Initialization
+        // ========================================
+        document.addEventListener('DOMContentLoaded', () => {
+            loadTheme();
+            
+            // Use Intersection Observer for animation trigger
+            setTimeout(animateBars, 200);
+        });
+    </script>
+</body>
+</html>

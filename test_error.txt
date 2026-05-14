@@ -1,0 +1,128 @@
+﻿Trying to load: models\total_kills\total_kills_model.joblib
+File exists: True
+python : Traceback (most 
+recent call last):
+At line:1 char:1
++ python 
+test_model_load.py 2>&1 
+| Out-File -Encoding 
+utf8 test_error.t ...
++ ~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~
+    + CategoryInfo       
+       : NotSpecified:   
+  (Traceback (most rec   
+ ent call last)::Stri    
+ng) [], RemoteExcept    
+ion
+    + FullyQualifiedErro 
+   rId : NativeCommandE  
+  rror
+ 
+  File "C:\Users\stijn\Do
+cuments\coding\League-Pre
+diction-main\test_model_l
+oad.py", line 12, in 
+<module>
+    model = 
+load(model_path)
+  File "C:\Users\stijn\Ap
+pData\Local\Programs\Pyth
+on\Python313\Lib\site-pac
+kages\joblib\numpy_pickle
+.py", line 749, in load
+    obj = _unpickle(
+        fobj,
+    ...<2 lines>...
+        mmap_mode=validat
+ed_mmap_mode,
+    )
+  File "C:\Users\stijn\Ap
+pData\Local\Programs\Pyth
+on\Python313\Lib\site-pac
+kages\joblib\numpy_pickle
+.py", line 626, in 
+_unpickle
+    obj = 
+unpickler.load()
+  File "C:\Users\stijn\Ap
+pData\Local\Programs\Pyth
+on\Python313\Lib\pickle.p
+y", line 1256, in load
+    
+dispatch[key[0]](self)
+    
+~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\stijn\Ap
+pData\Local\Programs\Pyth
+on\Python313\Lib\pickle.p
+y", line 1581, in 
+load_stack_global
+    self.append(self.find
+_class(module, name))
+                ~~~~~~~~~
+~~~~~~^^^^^^^^^^^^^^
+  File "C:\Users\stijn\Ap
+pData\Local\Programs\Pyth
+on\Python313\Lib\pickle.p
+y", line 1624, in 
+find_class
+    return _getattribute(
+sys.modules[module], 
+name)[0]
+           ~~~~~~~~~~~~~^
+^^^^^^^^^^^^^^^^^^^^^^^^^
+^
+  File "C:\Users\stijn\Ap
+pData\Local\Programs\Pyth
+on\Python313\Lib\pickle.p
+y", line 326, in 
+_getattribute
+    raise 
+AttributeError("Can't 
+get attribute {!r} on 
+{!r}"
+                         
+.format(name, top)) from 
+None
+AttributeError: Can't 
+get attribute 
+'ChampionHasher' on 
+<module '__main__' from '
+C:\\Users\\stijn\\Documen
+ts\\coding\\League-Predic
+tion-main\\test_model_loa
+d.py'>
+
+During handling of the 
+above exception, another 
+exception occurred:
+
+Traceback (most recent 
+call last):
+  File "C:\Users\stijn\Do
+cuments\coding\League-Pre
+diction-main\test_model_l
+oad.py", line 16, in 
+<module>
+    print(f"\u2717 Error 
+loading model: {e}")
+    ~~~~~^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^
+  File "C:\Users\stijn\Ap
+pData\Local\Programs\Pyth
+on\Python313\Lib\encoding
+s\cp1252.py", line 19, 
+in encode
+    return codecs.charmap
+_encode(input,self.errors
+,encoding_table)[0]
+           ~~~~~~~~~~~~~~
+~~~~~~~^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 
+'charmap' codec can't 
+encode character 
+'\u2717' in position 0: 
+character maps to 
+<undefined>

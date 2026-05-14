@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LoL Match Predictor</title>
+    <meta name="description" content="Predict League of Legends match outcomes using machine learning">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <div class="logo-icon">⚔️</div>
+                <h1>Match Predictor</h1>
+            </div>
+            <a href="/performance" class="performance-link">
+                <span>📈</span>
+                <span>Performance</span>
+            </a>
+            <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+                <span class="icon" id="theme-icon">🌙</span>
+                <span id="theme-label">Dark</span>
+            </button>
+        </header>
+
+        <!-- Error Message -->
+        {% if error %}
+        <div class="error-message">
+            <span>⚠️</span>
+            <span>{{ error }}</span>
+        </div>
+        {% endif %}
+
+        <!-- Main Form -->
+        <form method="POST" id="prediction-form">
+            <div class="team-grid">
+                <!-- Blue Team -->
+                <div class="card team-box blue">
+                    <div class="team-header">
+                        <div class="team-icon">B</div>
+                        <h2 class="team-title">Blue Side</h2>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="blue_league">League (Optional)</label>
+                        <select name="blue_league" id="blue_league" onchange="updateTeams('blue_league', 'blue_team')">
+                            <option value="">No team (champion matchup only)</option>
+                            {% for league in leagues %}
+                            <option value="{{ league }}">{{ league }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="blue_team">Team (Optional)</label>
+                        <select name="blue_team" id="blue_team">
+                            <option value="">No team selected</option>
+                        </select>
+                    </div>
+
+                    <div class="champion-section">
+                        <div class="section-title">Champion Draft</div>
+                        {% set roles = [('Top', '🛡️'), ('Jungle', '🌲'), ('Mid', '⚡'), ('Bot', '🎯'), ('Support', '💚')] %}
+                        {% for role_name, role_icon in roles %}
+                        {% set role_idx = loop.index0 %}
+                        <div class="form-group">
+                            <label class="form-label role-label" for="blue_search_{{ role_idx }}">
+                                <span>{{ role_icon }}</span>
+                                <span>{{ role_name }}</span>
+                            </label>
+                            <div class="champion-select-wrapper">
+                                <span class="search-icon">🔍</span>
+                                <input type="text" class="champion-search" id="blue_search_{{ role_idx }}" 
+                                       placeholder="Search champion..." 
+                                       onkeyup="filterChampions('blue', {{ role_idx }})"
+                                       onfocus="filterChampions('blue', {{ role_idx }})"
+                                       autocomplete="off">
+                                <div class="champion-list" id="blue_champions_{{ role_idx }}">
+                                    {% for champion in champions %}
+                                    <div class="champion-item" data-name="{{ champion }}" onclick="selectChampion('blue', {{ role_idx }}, this.dataset.name)">
+                                        <img src="" alt="{{ champion }}" loading="lazy">
+                                        <span>{{ champion }}</span>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                <div class="selected-champions" id="blue_selected_{{ role_idx }}"></div>
+                                <input type="hidden" name="blue_picks" id="blue_picks_{{ role_idx }}">
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Red Team -->
+                <div class="card team-box red">
+                    <div class="team-header">
+                        <div class="team-icon">R</div>
+                        <h2 class="team-title">Red Side</h2>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="red_league">League (Optional)</label>
+                        <select name="red_league" id="red_league" onchange="updateTeams('red_league', 'red_team')">
+                            <option value="">No team (champion matchup only)</option>
+                            {% for league in leagues %}
+                            <option value="{{ league }}">{{ league }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="red_team">Team (Optional)</label>
+                        <select name="red_team" id="red_team">
+                            <option value="">No team selected</option>
+                        </select>
+                    </div>
+
+                    <div class="champion-section">
+                        <div class="section-title">Champion Draft</div>
+                        {% for role_name, role_icon in roles %}
+                        {% set role_idx = loop.index0 %}
+                        <div class="form-group">
+                            <label class="form-label role-label" for="red_search_{{ role_idx }}">
+                                <span>{{ role_icon }}</span>
+                                <span>{{ role_name }}</span>
+                            </label>
+                            <div class="champion-select-wrapper">
+                                <span class="search-icon">🔍</span>
+                                <input type="text" class="champion-search" id="red_search_{{ role_idx }}" 
+                                       placeholder="Search champion..." 
+                                       onkeyup="filterChampions('red', {{ role_idx }})"
+                                       onfocus="filterChampions('red', {{ role_idx }})"
+                                       autocomplete="off">
+                                <div class="champion-list" id="red_champions_{{ role_idx }}">
+                                    {% for champion in champions %}
+                                    <div class="champion-item" data-name="{{ champion }}" onclick="selectChampion('red', {{ role_idx }}, this.dataset.name)">
+                                        <img src="" alt="{{ champion }}" loading="lazy">
+                                        <span>{{ champion }}</span>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                <div class="selected-champions" id="red_selected_{{ role_idx }}"></div>
+                                <input type="hidden" name="red_picks" id="red_picks_{{ role_idx }}">
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="submit-btn" id="submit-btn" disabled>
+                Select Champions (0/10)
+            </button>
+        </form>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Data last updated: <strong>{{ data_last_updated }}</strong></p>
+        </footer>
+    </div>
+
+    <script>
+        // ========================================
+        // Configuration
+        // ========================================
+        const DDRAGON_VER = "14.1.1";
+        const CHAMP_IMG_BASE = `https://ddragon.leagueoflegends.com/cdn/${DDRAGON_VER}/img/champion/`;
+        
+        const NAME_MAPPING = {
+            "Wukong": "MonkeyKing",
+            "Renata Glasc": "Renata",
+            "Bel'Veth": "Belveth",
+            "Kog'Maw": "KogMaw",
+            "Rek'Sai": "RekSai",
+            "Vel'Koz": "Velkoz",
+            "Cho'Gath": "ChoGath",
+            "Kai'Sa": "Kaisa",
+            "Kha'Zix": "Khazix",
+            "LeBlanc": "Leblanc",
+            "Nunu & Willump": "Nunu",
+        };
+
+        // ========================================
+        // Theme Management
+        // ========================================
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeUI(newTheme);
+        }
+
+        function updateThemeUI(theme) {
+            const icon = document.getElementById('theme-icon');
+            const label = document.getElementById('theme-label');
+            
+            if (theme === 'dark') {
+                icon.textContent = '🌙';
+                label.textContent = 'Dark';
+            } else {
+                icon.textContent = '☀️';
+                label.textContent = 'Light';
+            }
+        }
+
+        function loadTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+            updateThemeUI(savedTheme);
+        }
+
+        // ========================================
+        // Champion Images
+        // ========================================
+        function getChampImage(champName) {
+            let cleanName = NAME_MAPPING[champName] || champName.replace(/[' .]/g, "");
+            return `${CHAMP_IMG_BASE}${cleanName}.png`;
+        }
+
+        function loadChampionImages() {
+            document.querySelectorAll('.champion-item').forEach(item => {
+                const name = item.getAttribute('data-name');
+                const img = item.querySelector('img');
+                if (img && name) {
+                    img.src = getChampImage(name);
+                    img.onerror = function() {
+                        this.src = 'https://ddragon.leagueoflegends.com/cdn/14.1.1/img/profileicon/29.png';
+                    };
+                }
+            });
+        }
+
+        // ========================================
+        // Team Selection
+        // ========================================
+        function updateTeams(leagueSelectId, teamSelectId) {
+            const league = document.getElementById(leagueSelectId).value;
+            const teamSelect = document.getElementById(teamSelectId);
+
+            if (!league) {
+                teamSelect.innerHTML = '<option value="">No team selected</option>';
+                return;
+            }
+
+            fetch(`/get_teams/${league}`)
+                .then(response => response.json())
+                .then(data => {
+                    teamSelect.innerHTML = '<option value="">No team selected</option>';
+                    data.teams.forEach(team => {
+                        const option = document.createElement('option');
+                        option.value = team;
+                        option.textContent = team;
+                        teamSelect.appendChild(option);
+                    });
+                });
+        }
+
+        // ========================================
+        // Champion Selection
+        // ========================================
+        const selectedChampions = new Set();
+
+        function filterChampions(teamColor, pickNumber) {
+            const searchInput = document.getElementById(`${teamColor}_search_${pickNumber}`);
+            const championList = document.getElementById(`${teamColor}_champions_${pickNumber}`);
+            
+            // Normalize: lowercase and remove non-alphanumeric characters (apostrophes, spaces, dots)
+            const searchText = searchInput.value.toLowerCase().replace(/[^a-z0-9]/g, '');
+            const items = championList.getElementsByClassName('champion-item');
+
+            let hasMatches = false;
+            for (let i = 0; i < items.length; i++) {
+                const championName = items[i].getAttribute('data-name');
+                // Normalize champion name same way as search text
+                const championNameNormalized = championName.toLowerCase().replace(/[^a-z0-9]/g, '');
+                
+                const isSelected = selectedChampions.has(championName);
+                
+                // Compare normalized strings
+                if (championNameNormalized.includes(searchText) && !isSelected) {
+                    items[i].style.display = "flex";
+                    hasMatches = true;
+                } else {
+                    items[i].style.display = "none";
+                }
+            }
+            championList.classList.add('show');
+        }
+
+        function selectChampion(teamColor, pickNumber, championName) {
+            const searchInput = document.getElementById(`${teamColor}_search_${pickNumber}`);
+            const championList = document.getElementById(`${teamColor}_champions_${pickNumber}`);
+            const selectedContainer = document.getElementById(`${teamColor}_selected_${pickNumber}`);
+            const hiddenInput = document.getElementById(`${teamColor}_picks_${pickNumber}`);
+
+            // Clear previous selection if exists
+            if (hiddenInput.value) {
+                selectedChampions.delete(hiddenInput.value);
+            }
+
+            // Register new selection
+            selectedChampions.add(championName);
+            hiddenInput.value = championName;
+
+            // Render Selected UI
+            selectedContainer.innerHTML = '';
+            
+            const selectedChamp = document.createElement('div');
+            selectedChamp.classList.add('selected-champion');
+            
+            const img = document.createElement('img');
+            img.src = getChampImage(championName);
+            img.alt = championName;
+            selectedChamp.appendChild(img);
+            
+            const nameSpan = document.createElement('span');
+            nameSpan.textContent = championName;
+            selectedChamp.appendChild(nameSpan);
+
+            const removeButton = document.createElement('span');
+            removeButton.classList.add('remove-champion');
+            removeButton.innerHTML = '×';
+            removeButton.onclick = function(e) {
+                e.stopPropagation();
+                removeChampion(teamColor, pickNumber, championName);
+            };
+            selectedChamp.appendChild(removeButton);
+            
+            selectedContainer.appendChild(selectedChamp);
+
+            // UI Updates
+            searchInput.value = ''; 
+            searchInput.style.visibility = 'hidden';
+            // Hide the search icon completely
+            const searchIcon = searchInput.parentElement.querySelector('.search-icon');
+            if (searchIcon) searchIcon.style.display = 'none';
+            championList.classList.remove('show');
+            
+            checkFormValidity();
+        }
+        
+        function removeChampion(teamColor, pickNumber, championName) {
+            const selectedContainer = document.getElementById(`${teamColor}_selected_${pickNumber}`);
+            const hiddenInput = document.getElementById(`${teamColor}_picks_${pickNumber}`);
+            const searchInput = document.getElementById(`${teamColor}_search_${pickNumber}`);
+
+            selectedContainer.innerHTML = '';
+            hiddenInput.value = '';
+            selectedChampions.delete(championName);
+            
+            searchInput.style.visibility = 'visible';
+            // Show the search icon again
+            const searchIcon = searchInput.parentElement.querySelector('.search-icon');
+            if (searchIcon) searchIcon.style.display = 'block';
+            searchInput.focus();
+            
+            checkFormValidity();
+        }
+
+        // ========================================
+        // Form Validation
+        // ========================================
+        function checkFormValidity() {
+            const inputs = document.querySelectorAll('input[type="hidden"][name$="_picks"]');
+            let filled = 0;
+            inputs.forEach(input => {
+                if(input.value) filled++;
+            });
+            
+            const btn = document.getElementById('submit-btn');
+            
+            if (filled === 10) {
+                btn.disabled = false;
+                btn.textContent = "🔮 Predict Match";
+            } else {
+                btn.disabled = true;
+                btn.textContent = `Select Champions (${filled}/10)`;
+            }
+        }
+
+        // ========================================
+        // Global Event Handlers
+        // ========================================
+        document.addEventListener('click', function(event) {
+            if (!event.target.closest('.champion-select-wrapper')) {
+                document.querySelectorAll('.champion-list').forEach(list => list.classList.remove('show'));
+            }
+        });
+        
+        document.getElementById('prediction-form').addEventListener('submit', function() {
+            const btn = document.getElementById('submit-btn');
+            btn.disabled = true;
+            btn.innerHTML = '🔮 Predicting... <span class="spinner"></span>';
+        });
+
+        // ========================================
+        // Initialization
+        // ========================================
+        document.addEventListener('DOMContentLoaded', () => {
+            loadTheme();
+            loadChampionImages();
+            checkFormValidity();
+        });
+    </script>
+</body>
+</html>

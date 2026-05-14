@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Model Performance - LoL Match Predictor</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <!-- Chart.js for graphing -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .performance-container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--gold);
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-label {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+        
+        .chart-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            height: 400px;
+            position: relative;
+        }
+        
+        .table-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        th {
+            color: var(--gold);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 0.05em;
+        }
+        
+        td {
+            color: var(--text-primary);
+        }
+        
+        tr:last-child td {
+            border-bottom: none;
+        }
+        
+        tbody tr:hover {
+            background: var(--bg-card-hover);
+        }
+        
+        .accuracy-low { color: var(--red-team); }
+        .accuracy-mid { color: var(--text-primary); }
+        .accuracy-high { color: var(--accent-green); }
+
+        .model-section {
+            margin-bottom: 3rem;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <div class="logo-icon">📊</div>
+                <h1>Model Performance</h1>
+            </div>
+            <div style="display: flex; gap: 1rem; align-items: center;">
+                 <a href="/" class="back-link" style="text-decoration: none; color: var(--text-secondary);">
+                    <span>← Back to Predictor</span>
+                </a>
+                <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+                    <span class="icon" id="theme-icon">🌙</span>
+                </button>
+            </div>
+        </header>
+
+        {% if error %}
+        <div class="error-message">
+            <span>⚠️</span>
+            <span>{{ error }}</span>
+        </div>
+        {% else %}
+        
+        <div class="performance-container">
+            <!-- Key Stats -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">{{ total_matches }}</div>
+                    <div class="stat-label">Matches Analyzed</div>
+                </div>
+            </div>
+
+            {% for name, model_stats in models.items() %}
+            <div class="model-section">
+                <h2 style="color: var(--gold); border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+                    <span>{{ name|title }} Model</span>
+                    <span style="font-size: 1.2rem; background: rgba(200, 170, 110, 0.1); padding: 0.5rem 1rem; border-radius: 99px; border: 1px solid var(--gold);">
+                        {{ model_stats.overall_accuracy }}% Accuracy
+                    </span>
+                </h2>
+                
+                <!-- Calibration Chart -->
+                <div class="chart-container">
+                    <canvas id="chart-{{ name }}"></canvas>
+                </div>
+                
+                <!-- Detailed Table -->
+                <div class="table-container">
+                    <h3 class="section-title" style="margin-bottom: 1rem;">Detailed Breakdown</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Confidence Range</th>
+                                <th>Sample Count</th>
+                                <th>Expected Accuracy</th>
+                                <th>Actual Accuracy</th>
+                                <th>Difference</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in model_stats.bins %}
+                            <tr>
+                                <td>{{ row.bin }}</td>
+                                <td>{{ row.count }}</td>
+                                <td>{{ row.expected_accuracy }}%</td>
+                                <td>
+                                    <span class="{% if row.accuracy > 70 %}accuracy-high{% elif row.accuracy < 50 %}accuracy-low{% else %}accuracy-mid{% endif %}">
+                                        {{ row.accuracy }}%
+                                    </span>
+                                </td>
+                                <td>
+                                    {% set diff = (row.accuracy - row.expected_accuracy) | round(1) %}
+                                    <span style="color: {{ 'var(--accent-green)' if diff >= -2 and diff <= 2 else 'var(--red-team)' }}">
+                                        {{ '+' if diff > 0 else '' }}{{ diff }}%
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <script>
+            // Data passed from Flask
+            const modelsData = {{ models | tojson }};
+
+            // Chart.js Configuration
+            Object.keys(modelsData).forEach(modelName => {
+                const stats = modelsData[modelName];
+                const binLabels = stats.bins.map(b => b.bin);
+                const actualAccuracies = stats.bins.map(b => b.accuracy);
+                const expectedAccuracies = stats.bins.map(b => b.expected_accuracy);
+                const sampleCounts = stats.bins.map(b => b.count);
+
+                const ctx = document.getElementById(`chart-${modelName}`).getContext('2d');
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: binLabels,
+                        datasets: [
+                            {
+                                label: 'Actual Accuracy',
+                                data: actualAccuracies,
+                                borderColor: modelName === 'ultimate' ? '#c8aa6e' : '#5a6f82', // Gold for Ultimate, Blue for Standard
+                                backgroundColor: modelName === 'ultimate' ? 'rgba(200, 170, 110, 0.2)' : 'rgba(90, 111, 130, 0.2)',
+                                borderWidth: 3,
+                                pointBackgroundColor: modelName === 'ultimate' ? '#c8aa6e' : '#5a6f82',
+                                pointRadius: 5,
+                                tension: 0.1
+                            },
+                            {
+                                label: 'Perfect Calibration',
+                                data: expectedAccuracies,
+                                borderColor: '#8b9eb0', // Muted Grey
+                                borderDash: [5, 5],
+                                borderWidth: 2,
+                                pointRadius: 0,
+                                fill: false
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                labels: {
+                                    color: '#8b9eb0',
+                                    font: { family: "'Inter', sans-serif" }
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    afterBody: function(context) {
+                                        const index = context[0].dataIndex;
+                                        return `Samples: ${sampleCounts[index]}`;
+                                    }
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: `Confidence vs Actual Accuracy (${modelName.charAt(0).toUpperCase() + modelName.slice(1)})`,
+                                color: '#e8e6e3',
+                                font: { size: 16, family: "'Outfit', sans-serif" }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                min: 0,
+                                max: 100,
+                                title: { display: true, text: 'Accuracy (%)', color: '#8b9eb0' },
+                                grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                                ticks: { color: '#8b9eb0' }
+                            },
+                            x: {
+                                title: { display: true, text: 'Confidence Bin', color: '#8b9eb0' },
+                                grid: { display: false },
+                                ticks: { color: '#8b9eb0' }
+                            }
+                        }
+                    }
+                });
+            });
+
+            // Theme handling script reused
+            function toggleTheme() {
+                const html = document.documentElement;
+                const currentTheme = html.getAttribute('data-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                
+                html.setAttribute('data-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+                updateThemeUI(newTheme);
+            }
+
+            function updateThemeUI(theme) {
+                const icon = document.getElementById('theme-icon');
+                if (icon) {
+                    icon.textContent = theme === 'dark' ? '🌙' : '☀️';
+                }
+            }
+
+            function loadTheme() {
+                const savedTheme = localStorage.getItem('theme') || 'dark';
+                document.documentElement.setAttribute('data-theme', savedTheme);
+                updateThemeUI(savedTheme);
+            }
+            
+            loadTheme();
+        </script>
+        {% endif %}
+    </div>
+</body>
+</html>

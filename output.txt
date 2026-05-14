@@ -1,0 +1,67 @@
+Loading data...
+Training Ultimate Model with TimeSeriesSplit...
+Fitting 5 folds for each of 16 candidates, totalling 80 fits
+Traceback (most recent call last):
+  File "C:\Users\stijn\Documents\coding\League-Prediction-main\train_ultimate.py", line 110, in <module>
+    train_ultimate_model()
+    ~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\stijn\Documents\coding\League-Prediction-main\train_ultimate.py", line 73, in train_ultimate_model
+    grid_search.fit(X, y, classifier__sample_weight=sample_weight)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\stijn\Documents\coding\League-Prediction-main\venv\Lib\site-packages\sklearn\base.py", line 1336, in wrapper
+    return fit_method(estimator, *args, **kwargs)
+  File "C:\Users\stijn\Documents\coding\League-Prediction-main\venv\Lib\site-packages\sklearn\model_selection\_search.py", line 1053, in fit
+    self._run_search(evaluate_candidates)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\stijn\Documents\coding\League-Prediction-main\venv\Lib\site-packages\sklearn\model_selection\_search.py", line 1612, in _run_search
+    evaluate_candidates(ParameterGrid(self.param_grid))
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\stijn\Documents\coding\League-Prediction-main\venv\Lib\site-packages\sklearn\model_selection\_search.py", line 1030, in evaluate_candidates
+    _warn_or_raise_about_fit_failures(out, self.error_score)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\stijn\Documents\coding\League-Prediction-main\venv\Lib\site-packages\sklearn\model_selection\_validation.py", line 479, in _warn_or_raise_about_fit_failures
+    raise ValueError(all_fits_failed_message)
+ValueError: 
+All the 80 fits failed.
+It is very likely that your model is misconfigured.
+You can try to debug the error by setting error_score='raise'.
+
+Below are more details about the failures:
+--------------------------------------------------------------------------------
+80 fits failed with the following error:
+Traceback (most recent call last):
+  File "C:\Users\stijn\Documents\coding\League-Prediction-main\venv\Lib\site-packages\sklearn\model_selection\_validation.py", line 833, in _fit_and_score
+    estimator.fit(X_train, y_train, **fit_params)
+    ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\stijn\Documents\coding\League-Prediction-main\venv\Lib\site-packages\sklearn\base.py", line 1336, in wrapper
+    return fit_method(estimator, *args, **kwargs)
+  File "C:\Users\stijn\Documents\coding\League-Prediction-main\venv\Lib\site-packages\sklearn\pipeline.py", line 613, in fit
+    Xt = self._fit(X, y, routed_params, raw_params=params)
+  File "C:\Users\stijn\Documents\coding\League-Prediction-main\venv\Lib\site-packages\sklearn\pipeline.py", line 547, in _fit
+    X, fitted_transformer = fit_transform_one_cached(
+                            ~~~~~~~~~~~~~~~~~~~~~~~~^
+        cloned_transformer,
+        ^^^^^^^^^^^^^^^^^^^
+    ...<5 lines>...
+        params=step_params,
+        ^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\stijn\Documents\coding\League-Prediction-main\venv\Lib\site-packages\joblib\memory.py", line 326, in __call__
+    return self.func(*args, **kwargs)
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\stijn\Documents\coding\League-Prediction-main\venv\Lib\site-packages\sklearn\pipeline.py", line 1484, in _fit_transform_one
+    res = transformer.fit_transform(X, y, **params.get("fit_transform", {}))
+  File "C:\Users\stijn\Documents\coding\League-Prediction-main\venv\Lib\site-packages\sklearn\utils\_set_output.py", line 316, in wrapped
+    data_to_wrap = f(self, X, *args, **kwargs)
+  File "C:\Users\stijn\Documents\coding\League-Prediction-main\venv\Lib\site-packages\sklearn\base.py", line 1336, in wrapper
+    return fit_method(estimator, *args, **kwargs)
+  File "C:\Users\stijn\Documents\coding\League-Prediction-main\venv\Lib\site-packages\sklearn\compose\_column_transformer.py", line 988, in fit_transform
+    self._validate_transformers()
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\stijn\Documents\coding\League-Prediction-main\venv\Lib\site-packages\sklearn\compose\_column_transformer.py", line 523, in _validate_transformers
+    raise TypeError(
+    ...<3 lines>...
+    )
+TypeError: All estimators should implement fit and transform, or can be 'drop' or 'passthrough' specifiers. 'TeamSideWinRateEstimator()' (type <class 'src.features.TeamSideWinRateEstimator'>) doesn't.
+
