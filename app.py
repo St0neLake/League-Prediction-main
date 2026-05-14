@@ -23,7 +23,7 @@ predictor = UnifiedPredictor()
 
 # Load data from matches.csv
 try:
-    matches_df = pd.read_csv('matches.csv')
+    matches_df = pd.read_csv('matches.csv', low_memory=False)
 except FileNotFoundError:
     print("Error: matches.csv not found. Make sure it's in the same directory.")
     exit()
@@ -32,6 +32,16 @@ except FileNotFoundError:
 leagues = sorted(matches_df['league'].unique().tolist())
 # Extract unique champions, filtering out non-string values
 champions = sorted([champ for champ in matches_df['champion'].unique() if isinstance(champ, str)])
+
+@app.route('/get_champions')
+def get_champions():
+    all_champions = sorted([champ for champ in matches_df['champion'].unique() if isinstance(champ, str)])
+    return jsonify(champions=all_champions)
+
+@app.route('/get_teams')
+def get_all_teams():
+    all_teams = sorted(matches_df['teamname'].unique().tolist())
+    return jsonify(teams=all_teams)
 
 @app.route('/get_teams/<league>')
 def get_teams(league):
@@ -75,6 +85,39 @@ def index():
         return render_template('results.html', result=result)
     else:
         return render_template('index.html', leagues=leagues, champions=champions, **get_page_data())
+
+@app.route('/predict', methods=['POST'])
+def predict_json():
+    # Accept JSON body or form-encoded data
+    if request.is_json:
+        data = request.get_json()
+        blue_team = str(data.get('blue_team', '')).strip()
+        red_team = str(data.get('red_team', '')).strip()
+        blue_picks = data.get('blue_picks', [])
+        red_picks = data.get('red_picks', [])
+    else:
+        blue_team = request.form.get('blue_team', '').strip()
+        red_team = request.form.get('red_team', '').strip()
+        blue_picks = request.form.getlist('blue_picks')
+        red_picks = request.form.getlist('red_picks')
+
+    # Convert empty team names to "Unknown" to enable team-less predictions
+    if not blue_team:
+        blue_team = "Unknown"
+    if not red_team:
+        red_team = "Unknown"
+
+    if len(blue_picks) != 5 or len(red_picks) != 5:
+        return jsonify(error="Please provide exactly 5 champions for each team."), 400
+
+    result = predictor.predict_all(
+        blue_picks=blue_picks,
+        red_picks=red_picks,
+        blue_team=blue_team,
+        red_team=red_team
+    )
+
+    return jsonify(result)
 
 @app.route('/performance')
 def performance():
